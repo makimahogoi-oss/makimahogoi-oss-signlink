@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="profile-head">
+  <span class="avatar s96" style="background:linear-gradient(135deg,#f5a623,#e17076)">🛠</span>
+  <div class="name">База недоступна</div>
+  <div class="handle">{{ terms.APP_NAME }}</div>
+  <div class="bio">Сайт не может связаться с хранилищем. Обычно это значит, что неверный
+    <code>REDIS_URL</code> или хранилище временно недоступно. Попробуйте обновить страницу
+    через минуту.</div>
+</div>
+
+<div class="card">
+  <div class="section-title">Что проверить</div>
+  <ul class="tl">
+    <li>🌐 адрес базы доступен из сети (для Vercel — <code>rediss://</code> с TLS)</li>
+    <li>🔑 логин и пароль верные, база не архивирована</li>
+    <li>⏱ не превышен лимит команд у бесплатного тарифа</li>
+  </ul>
+</div>
+
+<a class="btn ghost block" href="/">Обновить</a>
+
+{% endblock %}

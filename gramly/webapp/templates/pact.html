@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+
+{% block nav_back %}
+<a class="icon-btn" href="/" title="Назад" aria-label="Назад">{{ m.icon('back') }}</a>
+{% endblock %}
+
+{% block content %}
+
+{% if ok_msg %}<div class="notice ok">{{ ok_msg }}</div>{% endif %}
+{% if err_msg %}<div class="notice bad">{{ err_msg }}</div>{% endif %}
+
+<div class="pact">
+  <div class="head">
+    <span style="font-size:26px">{{ p.emoji }}</span>
+    <div style="flex:1;min-width:0">
+      <div class="num">{{ terms.ENTITY }} №{{ p.num }}</div>
+      <div class="title">{{ p.title }}</div>
+      <div class="parties">{{ p.a }} × {{ p.b }}</div>
+    </div>
+  </div>
+  <div class="status">{{ m.status_dot(p.status) }}<span>{{ p.status_label }}</span>
+    <span style="color:var(--g-hint)">· {{ ts_full(p.created_at) }}</span></div>
+  {% if p.status_reason %}<div class="notice" style="margin:10px 0 0">{{ p.status_reason }}</div>{% endif %}
+</div>
+
+<div class="stat-grid card" style="border-radius:12px">
+  <div class="stat"><span>Срок</span><b style="font-size:14px">{{ ts_date(p.term_start) }}</b></div>
+  <div class="stat"><span>До</span><b style="font-size:14px">{{ ts_date(p.term_end) if p.term_end else 'бессрочно' }}</b></div>
+  <div class="stat"><span>Подп.</span><b>{{ signatures|length }}/2</b></div>
+  <div class="stat"><span>Каналов</span><b>{{ (sides[0].channels|length + sides[1].channels|length) }}</b></div>
+</div>
+
+{% for side in sides %}
+<div class="side" style="margin:0 12px 10px;background:var(--g-bg-section);border-radius:12px;padding:12px 14px;border-top:0">
+  <div class="who">
+    {{ m.status_dot('active') if side.uid else m.status_dot('draft') }}
+    {% if side.uid %}
+      <a href="/u/{{ side.uid }}">{{ side.name }}</a>
+      {% if side.username %}<span style="color:var(--g-hint);font-weight:400">@{{ side.username }}</span>{% endif %}
+    {% else %}<span style="color:var(--g-hint)">Вторая сторона ещё не указана</span>{% endif %}
+  </div>
+  {% if side.conditions %}
+    <ul>{% for c in side.conditions %}<li>{{ c }}</li>{% endfor %}</ul>
+  {% else %}
+    <div style="color:var(--g-hint);font-size:14px">Обязательства не указаны</div>
+  {% endif %}
+  {% if side.channels %}
+    <div style="margin-top:8px;font-size:13px;color:var(--g-hint)">
+      {% for ch in side.channels %}🔗 {% if ch.username %}<a href="https://t.me/{{ ch.username }}">@{{ ch.username }}</a>{% else %}{{ ch.title }}{% endif %}{{ '' if loop.last else ' · ' }}{% endfor %}
+    </div>
+  {% endif %}
+  {% if side.guarantor %}
+    <div style="margin-top:6px;font-size:13px">🤝 Гарант: <a href="/u/{{ side.guarantor }}">#{{ side.guarantor }}</a></div>
+  {% endif %}
+</div>
+{% endfor %}
+
+{% if guarantor %}
+<div class="card">
+  <div class="kv"><span>Гарант</span><span><a href="/u/{{ p.side_a }}">{{ guarantor }}</a></span></div>
+  {% if quote %}
+  <div class="kv"><span>Оплата кейса</span>
+    <span>{% if quote.free %}бесплатно · осталось {{ quote.left }}{% else %}⭐ {{ quote.side_stars }} с каждой стороны · гаранту ⭐ {{ quote.garantor_stars }}{% endif %}</span></div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if is_party and p.status not in ('done','broken','cancelled') %}
+<div class="card">
+  <div class="kv"><span>Ваша подпись</span><span>{% if my_sig %}подписано · {{ ts_full(my_sig.ts) }}{% else %}не подписано{% endif %}</span></div>
+</div>
+{% endif %}
+
+{% if is_party and not signed and p.status not in ('done','broken','cancelled') %}
+<form method="post" action="/p/{{ p.id }}/sign">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <div class="card">
+    <div class="field"><label>Заметка к подписи</label>
+      <input type="text" name="text" maxlength="160" placeholder="Подтверждаю условия" value="Подтверждаю условия"></div>
+    <div class="btn-row"><button class="btn primary block" data-haptic="light">✍️ Подписать пакт</button></div>
+  </div>
+</form>
+{% endif %}
+
+{% if is_party and p.status in ('active','signed','paused','dispute') %}
+<div class="card">
+  <div class="section-title" style="margin-left:14px">Зафиксировать результат</div>
+  <div class="split">
+    <form method="post" action="/p/{{ p.id }}/close">
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <input type="hidden" name="verdict" value="completed">
+      <button class="btn ghost block" style="border:0;border-right:1px solid var(--g-separator);border-radius:0" data-haptic="light">🏁 Исполнено</button>
+    </form>
+    <form method="post" action="/p/{{ p.id }}/close">
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <input type="hidden" name="verdict" value="broken">
+      <input type="hidden" name="guilty" value="me">
+      <button class="btn ghost block" style="border-radius:0;color:var(--g-destructive)" data-haptic="light">⛔ Нарушено мной</button>
+    </form>
+  </div>
+  <form method="post" action="/p/{{ p.id }}/close">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <input type="hidden" name="verdict" value="broken">
+    <input type="hidden" name="guilty" value="other">
+    <div class="btn-row"><button class="btn ghost block" data-haptic="light">⛔ Нарушено второй стороной</button></div>
+  </form>
+  <form method="post" action="/p/{{ p.id }}/close">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <input type="hidden" name="verdict" value="cancelled">
+    <div class="btn-row"><button class="btn ghost block" data-haptic="light">🚫 Расторгнуть</button></div>
+  </form>
+</div>
+{% endif %}
+
+{% if uid and is_party %}
+<form method="post" action="/report">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <input type="hidden" name="pid" value="{{ p.id }}">
+  <input type="hidden" name="target" value="{{ p.side_b if my_side == 'a' else p.side_a }}">
+  <div class="card">
+    <div class="field"><label>Причина</label>
+      <select name="reason">
+        <option value="scam">Мошенничество</option>
+        <option value="no_show">Не выполнил обязательства</option>
+        <option value="abuse">Оскорбления, спам</option>
+        <option value="theft">Присвоение канала/доступа</option>
+        <option value="fake">Подделка личности</option>
+        <option value="other">Другое</option>
+      </select></div>
+    <div class="field"><label>Что произошло</label>
+      <textarea name="text" rows="3" maxlength="1200" placeholder="Конкретные факты, даты, ссылки"></textarea></div>
+    <div class="btn-row"><button class="btn danger block" data-haptic="heavy">⚠️ Пожаловаться на вторую сторону</button></div>
+  </div>
+</form>
+{% endif %}
+
+<div class="section-title">Подписи</div>
+<div class="card">
+{% for sig in signatures %}
+  <div class="sig">
+    {{ m.avatar({'first_name': sig.name, 'score': 50}, 40) }}
+    <div class="grow">
+      <div class="name">{{ sig.name }}{% if sig.username %} <span style="color:var(--g-hint);font-weight:400">@{{ sig.username }}</span>{% endif %}</div>
+      <div class="when">{{ ts_full(sig.ts) }}{% if sig.text %} · {{ sig.text }}{% endif %}</div>
+    </div>
+    <span style="color:#34c759">✔️</span>
+  </div>
+{% else %}
+  <div class="empty">Подписей пока нет.</div>
+{% endfor %}
+</div>
+
+{% if not health.ok and health.lost %}
+<div class="notice bad">Бот не контролирует: {{ health.lost|length }} канал(ов) — Gramly потерял права администратора.</div>
+{% endif %}
+
+<div class="section-title">История</div>
+<div class="card">
+  <ul class="tl">
+  {% for e in timeline|reverse %}
+    <li class="{{ 'alarm' if e.kind.startswith('alert:') else ('ok' if e.kind == 'sign' else '') }}">
+      {{ e.text }}<div class="when">{{ e.when }}</div>
+    </li>
+  {% else %}
+    <li>Событий пока нет.</li>
+  {% endfor %}
+  </ul>
+</div>
+
+<div class="notice {{ 'ok' if integrity_ok else 'bad' }}" style="display:flex;justify-content:space-between;gap:12px;align-items:center">
+  <span>{{ '🔐' if integrity_ok else '⚠️' }} {{ integrity_note }}</span>
+  <button class="btn ghost" style="padding:7px 12px" data-copy="{{ p.hash }}">Отпечаток</button>
+</div>
+<div class="hash" style="text-align:center;padding:0 16px 20px">{{ p.hash }}</div>
+
+{% endblock %}
+
+{% block bottom %}
+<div class="bottom-bar">
+  <a class="btn ghost block" href="{{ '/my' if uid else '/gate' }}" data-haptic="light">
+    {{ '📄 Мои пакты' if uid else '🔑 Войти через Telegram' }}</a>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+
+{% block content %}
+
+<div class="notice {{ 'ok' if chain_ok else 'bad' }}">
+  {{ '🔐' if chain_ok else '⚠️' }} {{ chain_note }}
+  <div style="margin-top:6px;color:var(--g-hint)">Событий в цепочке: {{ st.ledger }} · людей: {{ st.users }}</div>
+</div>
+
+<div class="section-title">Рейтинг порядочности</div>
+<div class="card">
+{% for r in top %}
+  <a class="row" href="/u/{{ r.uid }}" data-haptic="light">
+    <span style="width:22px;color:var(--g-hint);font-variant-numeric:tabular-nums">{{ loop.index }}</span>
+    {{ m.avatar(r, 40) }}
+    <div class="grow">
+      <div class="title">{{ r.name }}{% if r.username %} <span style="color:var(--g-hint)">@{{ r.username }}</span>{% endif %}</div>
+      <div class="sub">{{ r.tier }}</div>
+    </div>
+    <b style="font-variant-numeric:tabular-nums">{{ '%.0f'|format(r.score) }}</b>
+  </a>
+{% else %}
+  <div class="empty">Рейтинг пока пуст.</div>
+{% endfor %}
+</div>
+
+<div class="section-title">Лента событий</div>
+<div class="card">
+  <ul class="ledger">
+  {% for e in rows %}
+    <li>
+      <span class="delta {{ 'up' if e.delta > 0 else ('down' if e.delta < 0 else 'zero') }}">{{ '%+.1f'|format(e.delta) }}</span>
+      <div style="flex:1;min-width:0">
+        <div class="title">{% if e.uid %}<a href="/u/{{ e.uid }}">{{ e.name }}</a>{% else %}—{% endif %}</div>
+        <div class="note">{{ e.note }}</div>
+        <div class="hash">{{ e.hash }}…</div>
+      </div>
+      <span class="note">{{ e.ts_short }}</span>
+    </li>
+  {% else %}
+    <li><span class="note">Пока пусто.</span></li>
+  {% endfor %}
+  </ul>
+</div>
+
+<div class="notice" style="color:var(--g-hint)">
+  Как это работает: вес зависят от порядочности второй стороны, повторные пакты с тем же
+  человеком дают всё меньше, «замкнутые круги» новых аккаунтов не приносят ничего,
+  а балл со временем медленно возвращается к базовому.
+</div>
+
+{% endblock %}

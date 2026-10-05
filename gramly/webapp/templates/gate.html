@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="profile-head">
+  <span class="avatar s96" style="background:linear-gradient(135deg,#3390ec,#6ab3f3)">🤝</span>
+  <div class="name">Gramly</div>
+  <div class="handle">{{ terms.APP_TAGLINE }}</div>
+  <div class="bio">Бот фиксирует взаимные обязательства между людьми и каналами, следит за тем, чтобы
+    договорённости выполнялись, и ведёт публичный рейтинг порядочности.</div>
+</div>
+
+{% if err_msg %}<div class="notice bad">{{ err_msg }}</div>{% endif %}
+
+<div class="card" id="login">
+  <div class="btn-row">
+    <button class="btn primary block" id="go" onclick="start()">Войти через Telegram</button>
+  </div>
+  <div class="notice" style="margin-bottom:0">
+    Откройте сайт из Telegram — тогда профиль подтвердится автоматически.
+    {% if bot_username %}
+      <div style="margin-top:8px">
+        <a href="https://t.me/{{ bot_username }}">Открыть бота {{ '@' ~ bot_username }}</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<form method="post" action="/auth" id="form" style="display:none">
+  <input type="hidden" name="initData" id="initData">
+  <input type="hidden" name="next" value="/">
+  <input type="hidden" name="_gate" id="gateToken" value="{{ gate_token }}">
+</form>
+
+<div class="section-title">Как это работает</div>
+<div class="card">
+  <ul class="tl">
+    <li>🤝 Создаёте <b>пакт</b> и описываете обязательства обеих сторон.</li>
+    <li>🔗 Привязываете каналы — бот должен быть в них администратором.</li>
+    <li>✍️ Вторая сторона подписывает. С этого момента пакт в силе.</li>
+    <li>👁️ Бот следит за условиями и уведомляет, если что-то пошло не так.</li>
+    <li>🏁 В конце отмечаете «Исполнено» или «Нарушено» — это двигает порядочность.</li>
+  </ul>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function start() {
+    var btn = document.getElementById('go');
+    btn.innerHTML = '<span class="spinner"></span> Проверяем подпись…';
+    var tg = window.Telegram && window.Telegram.WebApp;
+    var raw = tg && tg.initData ? tg.initData : (new URLSearchParams(location.search).get('initData') || '');
+    if (!raw) {
+      btn.innerHTML = 'Откройте сайт из Telegram';
+      Gramly.toast('Нет данных Telegram — откройте ссылку из бота');
+      return;
+    }
+    document.getElementById('initData').value = raw;
+    document.getElementById('form').submit();
+  }
+  if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.initData) start();
+</script>
+{% endblock %}

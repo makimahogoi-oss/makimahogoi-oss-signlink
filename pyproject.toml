@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=77.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gramly-web"
+version = "1.0.0"
+description = "Gramly website and Telegram Mini App"
+readme = "APP.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = ["flask>=3.0", "redis>=5.0"]
+
+[project.scripts]
+gramly-web = "gramly.webapp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["gramly*"]

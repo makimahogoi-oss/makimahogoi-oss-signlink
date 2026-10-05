@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+
+{% block content %}
+
+<div class="notice">
+  Гарант берёт на себя факты: если стороны не могут договориться, он разбирает спор
+  и фиксирует вердикт. Первые кейсы бесплатны — это способ набрать историю.
+  Дальше каждая сторона платит ⭐ {{ terms.STAR_FEE_PER_SIDE }}.
+
+  {% if mine %}
+    <div style="margin-top:10px">
+      Ваш статус: <b>{{ mine.emoji }} {{ mine.name }}</b> · кейсов {{ mine.cases }} ·
+      исполнено {{ mine.settled }} · споров {{ mine.disputes }} ·
+      бесплатных осталось {{ 'безлимит' if mine.free_quota > 900 else mine.free_left }} ·
+      баланс ⭐ {{ mine.stars }}
+      {% if mine.tier < 1 %}
+        <form method="post" action="/guarantor/apply" style="margin-top:10px">
+          <input type="hidden" name="_csrf" value="{{ csrf }}">
+          <button class="btn primary" data-haptic="light">Подать заявку на гаранта</button>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+<div class="section-title">Топ гарантов</div>
+<div class="card">
+{% for g in rows %}
+  <a class="row" href="/u/{{ g.uid }}" data-haptic="light">
+    <span class="avatar s40" style="background:var(--g-accent)">{{ g.emoji }}</span>
+    <div class="grow">
+      <div class="title">{{ g.name }}{% if g.username %} <span style="color:var(--g-hint)">@{{ g.username }}</span>{% endif %}</div>
+      <div class="sub">{{ g.tier_name }} · кейсов {{ g.cases }} · исполнено {{ g.settled }} · споров {{ g.disputes }}</div>
+    </div>
+    <span class="badge accent">⭐ {{ g.stars }}</span>
+  </a>
+{% else %}
+  <div class="empty"><div class="big">🛡</div>Гарантов пока нет — станьте первым.</div>
+{% endfor %}
+</div>
+
+<div class="section-title">Уровни</div>
+<div class="card">
+{% for t in tiers %}
+  <div class="row">
+    <span class="avatar s40" style="background:var(--g-bg-secondary)">{{ t.t|int }}</span>
+    <div class="grow">
+      <div class="title">{{ t.name }}</div>
+      <div class="sub">{{ t.perk }}</div>
+    </div>
+    {% if t.mult != 1.0 %}<span class="badge">×{{ t.mult }}</span>{% endif %}
+  </div>
+{% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,4 @@
+# Website dependencies. The Telegram bot is not part of this bundle, so the
+# framework (and httpx) is not needed here.
+flask>=3.0
+redis>=5.0

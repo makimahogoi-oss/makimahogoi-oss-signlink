@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="empty">
+  <div class="big">🤷</div>
+  <div style="font-size:16px;font-weight:500;color:var(--g-text)">{{ brand }}</div>
+  <p style="margin:6px 0 18px">Такой страницы нет или срок действия {{ terms.ENTITY|lower }} истёк.</p>
+  <a class="btn primary" href="/" data-haptic="light">На главную</a>
+</div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+
+{% block content %}
+
+{% if me %}
+<div class="card">
+  <div class="row" style="border-bottom:0">
+    {{ m.avatar(me, 48, ring=True) }}
+    <div class="grow">
+      <div class="title">{{ me.name }}</div>
+      <div class="sub">{{ me.tier }} · {{ '%.0f'|format(me.score) }}/100</div>
+    </div>
+    <a class="chev" href="{{ url_for('profile', uid=me.id) }}">{{ m.icon('chevron') }}</a>
+  </div>
+  <div style="padding:0 14px 12px">{{ m.meter(me.score) }}</div>
+  <div class="btn-row">
+    <a class="btn primary" href="{{ url_for('new_pact') }}" data-haptic="light">{{ '🤝 Создать пакт' }}</a>
+    <a class="btn" href="{{ url_for('my_pacts') }}">Мои пакты</a>
+  </div>
+</div>
+{% else %}
+<div class="notice">
+  Откройте Gramly из бота — тогда профиль подтянется автоматически. Или войдите по кнопке ниже.
+</div>
+<div class="btn-row">
+  <a class="btn primary block" href="{{ url_for('gate') }}" data-haptic="light">Войти через Telegram</a>
+</div>
+{% endif %}
+
+<div class="section-title">Сводка</div>
+<div class="card">
+  <div class="stat-grid">
+    <div class="stat"><b>{{ stats.total }}</b><span>пактов</span></div>
+    <div class="stat"><b>{{ stats.active }}</b><span>в силе</span></div>
+    <div class="stat"><b>{{ stats.users }}</b><span>людей</span></div>
+    <div class="stat"><b>{{ stats.reports_open }}</b><span>жалоб</span></div>
+  </div>
+</div>
+
+{% if me %}
+<div class="section-title">Ваши пакты</div>
+{% if my_list %}
+  {% for p in my_list %}
+  <a class="pact" href="{{ url_for('pact_page', pid=p.id) }}" style="display:block" data-haptic="light">
+    <div class="head">
+      <span style="font-size:20px">{{ p.emoji }}</span>
+      <div style="flex:1;min-width:0">
+        <div class="num">№{{ p.num }}</div>
+        <div class="title">{{ p.title }}</div>
+        <div class="parties">{{ p.a }} × {{ p.b }}</div>
+      </div>
+    </div>
+    <div class="status">{{ m.status_dot(p.status) }}<span>{{ p.status_label }}</span><span style="color:var(--g-hint)">· {{ p.created_short }}</span></div>
+  </a>
+  {% endfor %}
+{% else %}
+<div class="empty"><div class="big">🤝</div>У вас пока нет пактов.</div>
+{% endif %}
+{% endif %}
+
+<div class="section-title">Лента порядочности</div>
+<div class="card">
+  <ul class="ledger">
+  {% for e in ledger %}
+    <li>
+      <span class="delta {{ 'up' if e.delta > 0 else ('down' if e.delta < 0 else 'zero') }}">{{ '%+.1f'|format(e.delta) }}</span>
+      <div style="flex:1;min-width:0">
+        <div class="title">{{ e.name }}{% if e.username %} <span style="color:var(--g-hint)">@{{ e.username }}</span>{% endif %}</div>
+        <div class="note">{{ e.note }}</div>
+      </div>
+      <span class="note">{{ e.ts_short }}</span>
+    </li>
+  {% else %}
+    <li><span class="note">Пока пусто.</span></li>
+  {% endfor %}
+  </ul>
+</div>
+<div class="notice" style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+  <span>{{ chain_note }}</span>
+  <a class="btn ghost" style="padding:7px 13px" href="{{ url_for('rating_page') }}">Весь рейтинг</a>
+</div>
+
+<div class="section-title">Люди рядом</div>
+<div class="card">
+{% for p in people %}
+  <a class="row" href="{{ url_for('profile', uid=p.uid) }}" data-haptic="light">
+    {{ m.avatar(p, 40) }}
+    <div class="grow">
+      <div class="title">{{ p.name }}</div>
+      <div class="sub">{{ p.tier }} · {{ '%.0f'|format(p.score) }}/100</div>
+    </div>
+    <span class="chev">{{ m.icon('chevron') }}</span>
+  </a>
+{% else %}
+  <div class="empty">Пока никого нет.</div>
+{% endfor %}
+</div>
+
+<div class="section-title">Гаранты</div>
+<div class="card">
+{% for g in guarantors %}
+  <a class="row" href="{{ url_for('profile', uid=g.uid) }}" data-haptic="light">
+    <span class="avatar s40" style="background:var(--g-accent)">{{ g.emoji }}</span>
+    <div class="grow">
+      <div class="title">{{ g.username or g.name }}</div>
+      <div class="sub">{{ g.tier_name }} · кейсов {{ g.cases }} · ⭐ {{ g.stars }}</div>
+    </div>
+    <span class="chev">{{ m.icon('chevron') }}</span>
+  </a>
+{% else %}
+  <div class="empty"><div class="big">🛡</div>Гарантов пока нет.</div>
+{% endfor %}
+</div>
+
+{% endblock %}

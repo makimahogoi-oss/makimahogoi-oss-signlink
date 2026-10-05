@@ -1,0 +1,36 @@
+{% macro icon(name) -%}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  {%- if name == 'chevron' -%}<path d="m9 18 6-6-6-6"/>
+  {%- elif name == 'back' -%}<path d="M15 18l-6-6 6-6"/>
+  {%- elif name == 'verified' -%}<path d="M12 2 15 5l3.5-.5.5 3.5L22 11l-3 3 .5 3.5L16 18l-4 3-4-3-3.5.5L4 15 2 12l3-3-.5-3.5L8 5z" fill="currentColor" stroke="none"/><path d="m8.5 12 2.5 2.5 4.5-4.5" stroke="var(--g-bg-section)" stroke-width="2.2"/>
+  {%- elif name == 'shield' -%}<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>
+  {%- elif name == 'scale' -%}<path d="M12 3v18M5 7h14M6 7l-3 7h6zM18 7l-3 7h6z"/>
+  {%- elif name == 'moon' -%}<path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/>
+  {%- elif name == 'sun' -%}<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/>
+  {%- elif name == 'search' -%}<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+  {%- elif name == 'doc' -%}<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>
+  {%- elif name == 'user' -%}<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>
+  {%- elif name == 'flag' -%}<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>
+  {%- elif name == 'external' -%}<path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/>
+  {%- endif -%}
+</svg>
+{%- endmacro %}
+
+{% macro avatar(rec, size=40, ring=False, online=False) -%}
+{% set rec = rec or {} %}
+{% set sid = rec.score | default(50) | int %}
+<span class="avatar-wrap">
+  <span class="avatar s{{ size }}{% if ring %} ring{% endif %}" style="background:{{ avatar_color(rec) }}"
+        {% if rec.username %}title="@{{ rec.username }}"{% endif %}>{{ initials(rec) }}</span>
+  {% if online %}<span class="online" title="в сети"></span>{% endif %}
+  {% if rec.premium %}<span class="verified" title="Telegram Premium">{{ icon('verified') }}</span>{% endif %}
+</span>
+{%- endmacro %}
+
+{% macro status_dot(status) -%}<span class="dot {{ status }}" aria-hidden="true"></span>{% endmacro %}
+
+{% macro meter(score) -%}
+{% set pct = [[score, 100]|max, 100]|min %}
+{% set cls = 'hi' if score >= 80 else ('mid' if score >= 55 else 'lo') %}
+<div class="meter {{ cls }}"><i style="width:{{ pct }}%"></i></div>
+{%- endmacro %}
