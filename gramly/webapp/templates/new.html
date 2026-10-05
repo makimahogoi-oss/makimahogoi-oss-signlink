@@ -50,7 +50,7 @@
     <select name="guarantor">
       <option value="0">Без гаранта</option>
       {% for g in guarantors %}
-        <option value="{{ g.uid }}">{{ g.emoji }} {{ g.name }}{% if g.username %} (@{{ g.username }}){% endif }} · кейсов {{ g.cases }}</option>
+        <option value="{{ g.uid }}">{{ g.emoji }} {{ g.name }}{% if g.username %} (@{{ g.username }}){% endif %} · кейсов {{ g.cases }}</option>
       {% endfor %}
     </select>
   </div>

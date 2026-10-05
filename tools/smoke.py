@@ -327,6 +327,12 @@ def main() -> int:
     q = guarantors.quote(s, 101)
     check("quote after free slot", q["free"] is False and q["side_stars"] == terms.STAR_FEE_PER_SIDE, str(q))
 
+    board_rows = guarantors.leaderboard(s)
+    check("guarantor leaderboard is not empty", bool(board_rows), str(len(board_rows)))
+    check("leaderboard rows carry display fields",
+          all(board_rows[0].get(k) for k in ("uid", "name", "emoji", "tier_name")),
+          str(board_rows[0] if board_rows else {}))
+
     section("web: initData auth")
     from gramly.webapp import auth
     raw = make_initData({"id": 101, "first_name": "Аня", "username": "anya"})
@@ -372,6 +378,15 @@ def main() -> int:
               resp.get_data(as_text=True)[:200])
 
     check("login required for /my", client.get("/my").status_code == 302)
+
+    section("web: templates compile")
+    tpl_dir = ROOT / "gramly" / "webapp" / "templates"
+    for tpl in sorted(tpl_dir.glob("*.html")):
+        try:
+            app.jinja_env.get_template(tpl.name)
+            check(f"template {tpl.name}", True)
+        except Exception as exc:  # noqa: BLE001
+            check(f"template {tpl.name}", False, f"{type(exc).__name__}: {exc}")
 
     section("web: session and writes")
     resp = client.get("/gate")
@@ -427,6 +442,21 @@ def main() -> int:
 
         check("post without csrf is rejected",
               client.post(f"/p/{new_pid}/sign", data={"text": "x"}).status_code == 400)
+
+        # Every page must render for a signed-in user, not only redirect.
+        for path in ("/", "/pacts", "/rating", "/guarantors", "/my", "/new",
+                     f"/p/{new_pid}", "/u/101", "/api/me", "/api/board",
+                     f"/api/p/{new_pid}", "/api/u/101"):
+            resp = client.get(path)
+            check(f"signed-in GET {path} -> {resp.status_code}", resp.status_code == 200,
+                  resp.get_data(as_text=True)[:300])
+
+        new_html = client.get("/new").get_data(as_text=True)
+        first = board_rows[0]
+        check("guarantor option rendered in /new",
+              f'<option value="{first["uid"]}">' in new_html
+              and first["emoji"] in new_html and first["name"] in new_html,
+              new_html[new_html.find("name=\"guarantor\""):][:220])
 
         # a stranger must not be able to sign somebody else's pact
         client.get("/logout")

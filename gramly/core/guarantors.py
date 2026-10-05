@@ -179,6 +179,7 @@ def leaderboard(s: Store, limit: int = 20) -> list:
             "name": users.display(rec),
             "username": rec.get("username", ""),
             "tier": t,
+            "emoji": TIER_EMOJI.get(t, "?"),
             "tier_name": TIER_NAMES.get(t, TIER_NAMES[1]),
             "cases": int(rec.get("guarantor_cases", 0) or 0),
             "settled": int(rec.get("guarantor_settled", 0) or 0),

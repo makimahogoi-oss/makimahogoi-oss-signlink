@@ -34,6 +34,19 @@ rediss://default:<password>@<host>:6379
 python tools/check_redis.py     # reads REDIS_URL from .env, never prints the password
 ```
 
+### If you used the Vercel Upstash integration
+
+Vercel's marketplace integration prefixes every variable with the resource
+name, so a resource called `REDIS_URL` produces `REDIS_URL_REDIS_URL` instead
+of `REDIS_URL`. The app already understands that: any variable ending in
+`_REDIS_URL` is picked up automatically. To keep it tidy, either rename the
+integration resource (for example to `UPSTASH`, giving `UPSTASH_REDIS_URL`) or
+add your own plain `REDIS_URL` variable — an explicitly set `REDIS_URL` always
+wins.
+
+Ignore `KV_URL` / `KV_REST_API_URL` / `*_TOKEN` — those are the REST API
+credentials, `redis-py` needs the TCP endpoint.
+
 ## 2. Environment variables
 
 Set these in Vercel under **Project → Settings → Environment Variables**
@@ -62,6 +75,10 @@ vercel deploy --prod
 Or import the repository in the dashboard — Vercel detects Flask from
 `requirements.txt` and loads `api/index.py`.
 
+After deploying, open `https://<your-domain>/healthz`: `{"ok": true, ...}`
+means the database connection works, `{"ok": false}` means `REDIS_URL` is
+wrong or unreachable.
+
 ## 4. Tell Telegram about the domain
 
 * `@BotFather` → `/setmenubutton` → your Vercel domain
@@ -76,14 +93,19 @@ Or import the repository in the dashboard — Vercel detects Flask from
 * Every mutating route requires the per-session CSRF token (`X-CSRF-Token`
   header or `_csrf` field); `/auth` needs a double-submit token from `/gate`
   and follows only relative `next` paths.
+* If Redis is unreachable the site answers `503` with a readable page instead
+  of a stack trace.
 
 ## Local run
 
 ```bash
 pip install -r requirements.txt
 python run_web.py            # http://127.0.0.1:8080
-python tools/smoke.py        # 91 checks, no Redis needed
+python tools/smoke.py        # end-to-end test, no Redis needed
 ```
+
+`tools/smoke.py` compiles every template and renders every page for a signed-in
+user, so a broken template fails the test instead of a live request.
 
 ## Notes
 

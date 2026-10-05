@@ -8,6 +8,7 @@ proves the exact operations Gramly uses: hash, list, set, counter, TTL.
 
 from __future__ import annotations
 
+import os
 import sys
 import time
 from pathlib import Path
@@ -20,19 +21,28 @@ from gramly.core import terms  # noqa: E402
 
 
 def masked(url: str) -> str:
-    if "@" in url:
-        head, _, _ = url.partition("@")
-        creds, _, host = head.rpartition("//")
-        user = creds.split(":", 1)[0]
-        return f"{creds.split(':', 1)[0].replace(user, user)}:***@{host}"
-    return url
+    p = urlparse(url)
+    if not p.password:
+        return url
+    host = p.hostname or ""
+    if p.port:
+        host += f":{p.port}"
+    return f"{p.scheme}://{p.username or ''}:***@{host}{p.path}"
 
 
 def main() -> int:
     from gramly.core.config import config
 
     url = config.redis_url
-    print("REDIS_URL =", masked(url))
+    source = next((k for k in sorted(os.environ)
+                   if k == "REDIS_URL" or k.endswith("_REDIS_URL")), "default")
+    print("REDIS_URL =", masked(url), f"(from {source})")
+    if url.startswith("http"):
+        print("  ERROR: this is an Upstash REST (HTTP) endpoint.")
+        print("  redis-py needs the TCP URL: rediss://default:<password>@<host>:6379")
+        return 1
+    if url.endswith("6379") and "rediss://" not in url and "ssl" not in url.lower():
+        print("  note: no TLS scheme - Upstash endpoints usually need rediss://")
     p = urlparse(url)
     if p.scheme == "redis" and p.hostname in ("127.0.0.1", "localhost"):
         print("  note: this is a local Redis - it only works on your PC.")
