@@ -45,10 +45,28 @@ def _int(name: str, default: int) -> int:
         return default
 
 
+def _redis_url() -> str:
+    """Resolve the Redis URL, tolerating marketplace integration prefixes.
+
+    Vercel's Upstash integration writes REDIS_URL_REDIS_URL / UPSTASH_REDIS_URL
+    (resource name + _REDIS_URL), so a plain REDIS_URL lookup alone misses it.
+    """
+    for name in ("REDIS_URL", "UPSTASH_REDIS_URL", "UPSTASH_KV_REDIS_URL"):
+        value = _env(name)
+        if value:
+            return value
+    for key in sorted(os.environ):
+        if key.endswith("_REDIS_URL"):
+            value = os.environ[key].strip()
+            if value:
+                return value
+    return "redis://127.0.0.1:6379/0"
+
+
 @dataclass
 class Config:
     bot_token: str = field(default_factory=lambda: _env("GRAMLY_BOT_TOKEN") or _env("BOT_TOKEN"))
-    redis_url: str = field(default_factory=lambda: _env("REDIS_URL", "redis://127.0.0.1:6379/0"))
+    redis_url: str = field(default_factory=_redis_url)
     key_prefix: str = field(default_factory=lambda: _env("GRAMLY_PREFIX", "g"))
 
     host: str = field(default_factory=lambda: _env("GRAMLY_HOST", "0.0.0.0"))
