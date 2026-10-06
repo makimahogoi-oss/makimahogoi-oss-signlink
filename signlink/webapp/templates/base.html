@@ -1,0 +1,40 @@
+{% import "_macros.html" as m %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#ffffff">
+<title>{{ brand|default(terms.APP_NAME) }} — {{ brand_note|default(terms.APP_TAGLINE) }}</title>
+<meta name="csrf-token" content="{{ csrf }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='tg.css') }}">
+{% if not g.user %}<script src="https://telegram.org/js/telegram-web-app.js"></script>{% endif %}
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    {% block nav_back %}{% endblock %}
+    <div class="brand">
+      <span>{{ brand|default(terms.APP_NAME) }}</span>
+    </div>
+  </header>
+
+  {% if nav %}<nav class="bottom-nav" aria-label="Навигация">
+    {% for item in nav %}
+      <a class="nav-item" aria-current="{{ 'page' if item.key == active else 'false' }}" href="{{ item.href }}">
+        {{ m.icon(item.icon) }}<span>{{ item.label }}</span>
+      </a>
+    {% endfor %}
+  </nav>{% endif %}
+
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block bottom %}{% endblock %}
+</div>
+<script src="{{ url_for('static', filename='tg.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

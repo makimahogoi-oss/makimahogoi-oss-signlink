@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+
+{% block content %}
+
+<div class="notice">Гарант подключается к сделке после подтверждения обеих сторон. Он видит очередь, историю решений и закрытый рабочий кабинет; обычным участникам это меню не показывается.</div>
+
+<div class="section-title">Гаранты</div>
+<div class="card">
+{% for g in rows %}
+  <a class="row" href="/u/{{ g.uid }}" data-haptic="light">
+    <span class="avatar s40" style="background:var(--g-accent)">{{ g.emoji }}</span>
+    <div class="grow">
+      <div class="title">{{ g.name }}{% if g.username %} <span style="color:var(--g-hint)">@{{ g.username }}</span>{% endif %}</div>
+      <div class="sub">{{ g.tier_name }} · завершено {{ g.settled }} · споров {{ g.disputes }}</div>
+    </div>
+    <span class="badge accent">{{ '{:,.0f}'.format(g.score).replace(',', ' ') }}</span>
+  </a>
+{% else %}
+  <div class="empty"><div class="big">🛡</div>Пока нет доступных гарантов.</div>
+{% endfor %}
+</div>
+
+{% if mine and mine.tier >= 1 %}<div class="btn-row"><a class="btn primary block" href="/guarantor/desk">Открыть кабинет гаранта</a></div>{% endif %}
+
+{% endblock %}

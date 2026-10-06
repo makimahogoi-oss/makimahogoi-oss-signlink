@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+
+{% block nav_back %}
+<a class="icon-btn" href="/" title="Назад" aria-label="Назад">{{ m.icon('back') }}</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="profile-head">
+  {{ m.avatar(p, 128, ring=True, glow=p.role) }}
+  <div class="name">{{ p.name }}</div>
+  <div class="handle">{% if p.username %}@{{ p.username }}{% else %}id {{ p.uid }}{% endif %}</div>
+  <div class="reputation-number">{{ '{:,.0f}'.format(p.score).replace(',', ' ') }}</div>
+  <div class="reputation-caption">порядочность{% if p.reputation_label %} · {{ p.reputation_label }}{% endif %}</div>
+  {% if p.bio %}<div class="bio">{{ p.bio }}</div>{% endif %}
+</div>
+
+<div class="card">
+  <div class="stat-grid">
+    <div class="stat"><b>{{ p.pact_count }}</b><span>сделок</span></div>
+    <div class="stat"><b>{{ p.closed }}</b><span>исполнено</span></div>
+    <div class="stat"><b>{{ p.broken }}</b><span>нарушено</span></div>
+    <div class="stat"><b>{{ p.opened }}</b><span>создано</span></div>
+  </div>
+</div>
+
+{% if p.guarantor_tier >= 1 %}
+<div class="card">
+  <div class="kv"><span>Гарант</span><span>{{ p.guarantor_name }}</span></div>
+</div>
+{% endif %}
+
+{% if not is_me %}
+<div class="btn-row">
+  <a class="btn primary" href="/new?cp={{ p.uid }}" data-haptic="light">Предложить сделку</a>
+  {% if uid %}<button class="btn danger" onclick="Gramly.tg && Gramly.tg.showPopup ? Gramly.tg.showPopup() : null" style="display:none"></button>{% endif %}
+</div>
+{% endif %}
+
+<div class="section-title">Сделки</div>
+{% if pacts_list %}
+  {% for x in pacts_list %}
+  <a class="pact" href="/p/{{ x.id }}" style="display:block" data-haptic="light">
+    <div class="head">
+      <span style="font-size:20px">{{ x.emoji }}</span>
+      <div style="flex:1;min-width:0">
+        <div class="num">№{{ x.num }}</div>
+        <div class="title">{{ x.title }}</div>
+        <div class="parties">{{ x.a }} × {{ x.b }}</div>
+      </div>
+    </div>
+    <div class="status">{{ m.status_dot(x.status) }}<span>{{ x.status_label }}</span>
+      <span style="color:var(--g-hint)">· {{ x.created_short }}</span></div>
+  </a>
+  {% endfor %}
+{% else %}
+<div class="empty"><div class="big">🤝</div>Сделок пока нет.</div>
+{% endif %}
+
+<div class="section-title">События порядочности</div>
+<div class="card">
+  <ul class="ledger">
+  {% for e in events %}
+    <li>
+      <span class="delta {{ 'up' if e.delta > 0 else ('down' if e.delta < 0 else 'zero') }}">{{ '%+.1f'|format(e.delta) }}</span>
+      <div style="flex:1;min-width:0">
+        <div class="note">{{ e.note }}</div>
+      </div>
+      <span class="note">{{ e.when }}</span>
+    </li>
+  {% else %}
+    <li><span class="note">Событий пока нет.</span></li>
+  {% endfor %}
+  </ul>
+</div>
+
+<div class="notice" style="text-align:center;color:var(--g-hint)">
+  Репутация растёт с исполненными сделками и не имеет верхнего потолка.
+</div>
+
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if ok_msg %}<div class="notice ok">{{ ok_msg }}</div>{% endif %}
+{% if err_msg %}<div class="notice bad">{{ err_msg }}</div>{% endif %}
+
+<form method="post" action="/new">
+<input type="hidden" name="_csrf" value="{{ csrf }}">
+<div class="card">
+  <div class="field">
+    <label>Тип сделки</label>
+    <select name="kind">
+      {% for k in order %}
+        <option value="{{ k }}" {{ 'selected' if k == default_kind else '' }}>{{ kinds[k].emoji }} {{ kinds[k].label }} — {{ kinds[k].hint }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label>Вторая сторона: @username или Telegram id</label>
+    <input type="text" name="counterparty" placeholder="@animegenie" value="{{ request.args.get('cp', '') }}" required>
+  </div>
+  <div class="field">
+    <label>Название</label>
+    <input type="text" name="title" maxlength="120" placeholder="Пиар AnimeGenie × Логово">
+  </div>
+</div>
+
+<div class="section-title">Ваши обязательства</div>
+<div class="card">
+  <div class="field" style="margin-top:12px">
+    <textarea name="a_conditions" rows="5" placeholder="По одному обязательству в строке:&#10;Предоставление неограниченного количества генераций&#10;Пиар канала в течение всего срока" required></textarea>
+  </div>
+</div>
+
+<div class="section-title">Обязательства второй стороны</div>
+<div class="card">
+  <div class="field" style="margin-top:12px">
+    <textarea name="b_conditions" rows="4" placeholder="Что должен сделать контрагент (по одному в строке)"></textarea>
+  </div>
+</div>
+
+<div class="section-title">Срок и гарант</div>
+<div class="card">
+  <div class="field" style="margin-top:12px">
+    <label>Срок в днях (или «бессрочно»)</label>
+    <input type="text" name="term" value="30" placeholder="30">
+  </div>
+  <div class="field">
+    <label>Гарант (необязательно)</label>
+    <select name="guarantor">
+      <option value="0">Без гаранта</option>
+      {% for g in guarantors %}
+        <option value="{{ g.uid }}">{{ g.emoji }} {{ g.name }}{% if g.username %} (@{{ g.username }}){% endif %} · кейсов {{ g.cases }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
+<div class="btn-row" style="padding:4px 12px 24px">
+  <button class="btn primary block" data-haptic="heavy">Создать сделку</button>
+</div>
+</form>
+
+<div class="notice" style="color:var(--g-hint)">
+  Сделка создаётся после вашего подтверждения. Второй участник получит ссылку и подтвердит условия.
+  Если выбран гарант, после двух подтверждений сделка переходит в его очередь.
+</div>
+
+{% endblock %}

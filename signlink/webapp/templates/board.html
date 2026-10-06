@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+
+{% block content %}
+
+<div class="field" style="margin:4px 12px 10px">
+  <input type="search" data-search placeholder="Поиск по названию или участникам" value="{{ q }}">
+</div>
+
+{% if not mine %}
+<div class="chips">
+  <a class="chip" aria-pressed="{{ 'false' if kind else 'true' }}" href="/pacts">Все</a>
+  {% for k in order %}
+    <a class="chip" aria-pressed="{{ 'true' if kind == k else 'false' }}" href="/pacts?kind={{ k }}">{{ kinds[k].emoji }} {{ kinds[k].label }}</a>
+  {% endfor %}
+</div>
+<div class="chips">
+  <a class="chip" aria-pressed="{{ 'false' if status else 'true' }}" href="/pacts{{ ('?kind=' ~ kind) if kind else '' }}">Любой статус</a>
+  {% for st in ['active', 'signed', 'half', 'done', 'broken'] %}
+    <a class="chip" aria-pressed="{{ 'true' if status == st else 'false' }}"
+       href="/pacts?status={{ st }}{{ ('&kind=' ~ kind) if kind else '' }}">{{ statuses[st] }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="section-title">{{ 'Ваши сделки' if mine else 'Лента сделок' }} · {{ total }}</div>
+
+{% for p in rows %}
+<a class="pact" href="/p/{{ p.id }}" style="display:block" data-haptic="light">
+  <div class="head">
+    <span style="font-size:20px">{{ p.emoji }}</span>
+    <div style="flex:1;min-width:0">
+      <div class="num">№{{ p.num }} · {{ p.kind_label }}</div>
+      <div class="title">{{ p.title }}</div>
+      <div class="parties">{{ p.a }} × {{ p.b }}</div>
+    </div>
+  </div>
+  <div class="status">{{ m.status_dot(p.status) }}<span>{{ p.status_label }}</span>
+    <span style="color:var(--g-hint)">· {{ p.created_short }}</span></div>
+</a>
+{% else %}
+<div class="empty"><div class="big">🤝</div>{{ 'У вас пока нет сделок.' if mine else 'Пока никто не создал сделку — будьте первым.' }}</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block bottom %}
+<div class="bottom-bar">
+  {% if uid %}
+  <a class="btn primary block" href="/new" data-haptic="light">Создать сделку</a>
+  {% else %}
+  <a class="btn primary block" href="/gate" data-haptic="light">Войти и создать сделку</a>
+  {% endif %}
+</div>
+{% endblock %}

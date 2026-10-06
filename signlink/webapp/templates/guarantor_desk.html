@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+
+{% block nav_back %}<a class="icon-btn" href="/guarantors" aria-label="Назад">{{ m.icon('back') }}</a>{% endblock %}
+
+{% block content %}
+<div class="notice">Закрытый кабинет. Здесь гарант ведёт только назначенные ему сделки; участники видят лишь публичную карточку гаранта.</div>
+
+<div class="section-title">Очередь</div>
+<div class="card">
+{% for p in cases %}
+  <a class="row" href="/p/{{ p.id }}">
+    <span>{{ p.emoji }}</span><div class="grow"><div class="title">{{ p.title }}</div><div class="sub">{{ p.a }} × {{ p.b }} · {{ p.status_label }}</div></div>{{ m.icon('chevron') }}
+  </a>
+{% else %}
+  <div class="empty">Назначенных сделок пока нет.</div>
+{% endfor %}
+</div>
+
+<div class="section-title">Рабочая сводка</div>
+<div class="card"><div class="stat-grid"><div class="stat"><b>{{ info.cases }}</b><span>всего</span></div><div class="stat"><b>{{ info.settled }}</b><span>решено</span></div><div class="stat"><b>{{ info.disputes }}</b><span>споров</span></div></div></div>
+{% endblock %}

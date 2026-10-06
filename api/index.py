@@ -1,4 +1,4 @@
-"""Vercel entrypoint.
+﻿"""Vercel entrypoint.
 
 Vercel's Python runtime loads a file named app.py / index.py / server.py /
 main.py / wsgi.py (also inside src/, app/ or api/) and expects a top-level
@@ -9,7 +9,7 @@ Only the website runs on Vercel. The Telegram bot (gramly/botapp) needs a long
 lived process and must run on a normal host, not in a serverless function.
 """
 
-from gramly.webapp.server import create_app
+from signlink.webapp.server import create_app
 
 app = create_app()
 
