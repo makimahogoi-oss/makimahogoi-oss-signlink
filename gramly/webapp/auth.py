@@ -71,7 +71,7 @@ def validate(raw: str, bot_token: str = "", max_age: int = MAX_AGE) -> tuple[boo
     except (TypeError, ValueError):
         return False, params, "auth_date не число"
     age = int(time.time()) - auth_date
-    if age > MAX_SKEW:
+    if age < -MAX_SKEW:
         return False, params, "auth_date из будущего"
     if max_age and age > max_age:
         return False, params, "данные устарели"

@@ -1,24 +1,25 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="profile-head">
-  <span class="avatar s96" style="background:linear-gradient(135deg,#f5a623,#e17076)">🛠</span>
-  <div class="name">База недоступна</div>
-  <div class="handle">{{ terms.APP_NAME }}</div>
-  <div class="bio">Сайт не может связаться с хранилищем. Обычно это значит, что неверный
-    <code>REDIS_URL</code> или хранилище временно недоступно. Попробуйте обновить страницу
-    через минуту.</div>
-</div>
+<section class="profile-hero aura-admin" style="--aura-strength:0.65">
+  <div class="profile-avatar-orbit">
+    <div class="profile-aura a-1"></div>
+    <div class="profile-aura a-2"></div>
+    <span class="avatar s96" style="background:linear-gradient(135deg,#8d8d8f,#c8c8ca)">!</span>
+  </div>
+  <div class="profile-name">База недоступна</div>
+  <div class="profile-handle">{{ terms.APP_NAME }}</div>
+</section>
 
-<div class="card">
-  <div class="section-title">Что проверить</div>
-  <ul class="tl">
-    <li>🌐 адрес базы доступен из сети (для Vercel — <code>rediss://</code> с TLS)</li>
-    <li>🔑 логин и пароль верные, база не архивирована</li>
-    <li>⏱ не превышен лимит команд у бесплатного тарифа</li>
-  </ul>
-</div>
+<div class="notice bad">Не удалось обратиться к хранилищу. Проверьте REDIS_URL или повторите попытку через минуту.</div>
 
-<a class="btn ghost block" href="/">Обновить</a>
+<div class="section-title">Что проверить</div>
+<section class="tg-section">
+  <div class="row"><div class="grow"><div class="title">Подключение</div><div class="sub">Redis должен быть доступен из среды выполнения.</div></div></div>
+  <div class="row"><div class="grow"><div class="title">TLS и доступ</div><div class="sub">Для serverless/Vercel обычно используется rediss://.</div></div></div>
+  <div class="row"><div class="grow"><div class="title">Лимиты</div><div class="sub">Проверьте лимиты и состояние вашей Redis-базы.</div></div></div>
+</section>
+
+<a class="btn ghost block" style="margin:0 8px" href="/">Обновить</a>
 
 {% endblock %}

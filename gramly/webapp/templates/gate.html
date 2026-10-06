@@ -1,46 +1,42 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="profile-head">
-  <span class="avatar s96" style="background:linear-gradient(135deg,#3390ec,#6ab3f3)">🤝</span>
-  <div class="name">Gramly</div>
-  <div class="handle">{{ terms.APP_TAGLINE }}</div>
-  <div class="bio">Бот фиксирует взаимные обязательства между людьми и каналами, следит за тем, чтобы
-    договорённости выполнялись, и ведёт публичный рейтинг порядочности.</div>
-</div>
+<section class="profile-hero aura-member" style="--aura-strength:0.8">
+  <div class="profile-avatar-orbit">
+    <div class="profile-aura a-1"></div>
+    <div class="profile-aura a-2"></div>
+    <span class="avatar s96" style="background:linear-gradient(135deg,#3390ec,#6ab3f3)">G</span>
+  </div>
+  <div class="profile-name">Gramly</div>
+  <div class="profile-handle">{{ terms.APP_TAGLINE }}</div>
+</section>
 
 {% if err_msg %}<div class="notice bad">{{ err_msg }}</div>{% endif %}
 
-<div class="card" id="login">
+<section class="tg-section" id="login">
   <div class="btn-row">
     <button class="btn primary block" id="go" onclick="start()">Войти через Telegram</button>
   </div>
   <div class="notice" style="margin-bottom:0">
-    Откройте сайт из Telegram — тогда профиль подтвердится автоматически.
+    Откройте приложение из Telegram — профиль подтянется автоматически.
     {% if bot_username %}
-      <div style="margin-top:8px">
-        <a href="https://t.me/{{ bot_username }}">Открыть бота {{ '@' ~ bot_username }}</a>
-      </div>
+      <div style="margin-top:8px"><a href="https://t.me/{{ bot_username }}">Открыть бота @{{ bot_username }}</a></div>
     {% endif %}
   </div>
-</div>
+</section>
+
+<div class="section-title">Как это работает</div>
+<section class="tg-section">
+  <div class="row"><div class="grow"><div class="title">Договорённость</div><div class="sub">Описываете обязательства обеих сторон.</div></div></div>
+  <div class="row"><div class="grow"><div class="title">Подпись</div><div class="sub">Вторая сторона подтверждает условия.</div></div></div>
+  <div class="row"><div class="grow"><div class="title">Результат</div><div class="sub">Исполнение или нарушение меняет порядочность.</div></div></div>
+</section>
 
 <form method="post" action="/auth" id="form" style="display:none">
   <input type="hidden" name="initData" id="initData">
   <input type="hidden" name="next" value="/">
   <input type="hidden" name="_gate" id="gateToken" value="{{ gate_token }}">
 </form>
-
-<div class="section-title">Как это работает</div>
-<div class="card">
-  <ul class="tl">
-    <li>🤝 Создаёте <b>пакт</b> и описываете обязательства обеих сторон.</li>
-    <li>🔗 Привязываете каналы — бот должен быть в них администратором.</li>
-    <li>✍️ Вторая сторона подписывает. С этого момента пакт в силе.</li>
-    <li>👁️ Бот следит за условиями и уведомляет, если что-то пошло не так.</li>
-    <li>🏁 В конце отмечаете «Исполнено» или «Нарушено» — это двигает порядочность.</li>
-  </ul>
-</div>
 
 {% endblock %}
 

@@ -26,6 +26,7 @@ def default(uid: int) -> dict:
         "username": "",
         "bio": "",
         "avatar": "",
+        "photo_url": "",
         "avatar_color": "",
         "emoji_status": "",
         "premium": False,
@@ -50,7 +51,7 @@ def default(uid: int) -> dict:
 
 def touch(s: Store, user) -> dict:
     """Register or refresh a profile from a Telegram User object or dict."""
-    uid, first, last, uname = _extract(user)
+    uid, first, last, uname, photo_url = _extract(user)
     if not uid:
         return {}
     rec = get(s, uid)
@@ -59,6 +60,7 @@ def touch(s: Store, user) -> dict:
         "first_name": first or rec.get("first_name", ""),
         "last_name": last or rec.get("last_name", ""),
         "username": uname or rec.get("username", ""),
+        "photo_url": photo_url or rec.get("photo_url", ""),
         "premium": bool(getattr(user, "is_premium", False)) or rec.get("premium", False),
         "last_seen": now(),
     })
@@ -72,7 +74,7 @@ def touch(s: Store, user) -> dict:
 
 def _extract(user) -> tuple:
     if user is None:
-        return None, "", "", ""
+        return None, "", "", "", ""
     if isinstance(user, dict):
         uid = user.get("id")
         return (
@@ -80,12 +82,14 @@ def _extract(user) -> tuple:
             user.get("first_name") or "",
             user.get("last_name") or "",
             user.get("username") or "",
+            user.get("photo_url") or "",
         )
     return (
         getattr(user, "id", None),
         getattr(user, "first_name", "") or "",
         getattr(user, "last_name", "") or "",
         getattr(user, "username", "") or "",
+        getattr(user, "photo_url", "") or "",
     )
 
 
@@ -304,7 +308,7 @@ def is_eligible_counterparty(s: Store, uid: int) -> tuple[bool, str]:
     if snap["score"] < 20:
         return False, "у контрагента слишком низкий балл порядочности"
     if rec.get("pacts_broken", 0) >= 3:
-        return False, "у контрагента слишком много нарушенных пактов"
+        return False, "у контрагента слишком много нарушенных договорённостей"
     return True, ""
 
 
@@ -317,9 +321,13 @@ def recommend(s: Store, uid: int, limit: int = 5) -> list:
 
 def recent_joiners(s: Store, uid: int, limit: int = 5) -> list:
     out = []
+    prefix = s.k("u", "")
     for k in s.scan_keys(s.k("u", "*")):
+        suffix = k[len(prefix):] if k.startswith(prefix) else ""
+        if not suffix.isdigit():
+            continue
         rec = s.hgetall(k)
-        if not rec or rec.get("id") == uid:
+        if not rec or int(rec.get("id") or 0) == uid:
             continue
         if not rec.get("username"):
             continue
@@ -346,8 +354,8 @@ def rank(s: Store, limit: int = 20) -> list:
             "uid": int(uid),
             "name": display(user),
             "username": user.get("username", ""),
+            "photo_url": user.get("photo_url", ""),
             "score": value,
-            "tier": rating.format_tier(value),
         })
     rows.sort(key=lambda r: r["score"], reverse=True)
     return rows[:limit]

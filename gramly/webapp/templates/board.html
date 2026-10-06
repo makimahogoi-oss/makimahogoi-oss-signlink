@@ -23,7 +23,7 @@
 </div>
 {% endif %}
 
-<div class="section-title">{{ 'Ваши пакты' if mine else 'Публичная доска' }} · {{ total }}</div>
+<div class="section-title">{{ 'Ваши договорённости' if mine else 'Договорённости' }} · {{ total }}</div>
 
 {% for p in rows %}
 <a class="pact" href="/p/{{ p.id }}" style="display:block" data-haptic="light">
@@ -39,7 +39,7 @@
     <span style="color:var(--g-hint)">· {{ p.created_short }}</span></div>
 </a>
 {% else %}
-<div class="empty"><div class="big">🤝</div>{{ 'У вас пока нет пактов.' if mine else 'Пока никто не создал пакт — будьте первым.' }}</div>
+<div class="empty"><div class="big">🤝</div>{{ 'У вас пока нет договорённостей.' if mine else 'Пока здесь пусто.' }}</div>
 {% endfor %}
 
 {% endblock %}
@@ -47,9 +47,9 @@
 {% block bottom %}
 <div class="bottom-bar">
   {% if uid %}
-  <a class="btn primary block" href="/new" data-haptic="light">🤝 Создать пакт</a>
+  <a class="btn primary block" href="/new" data-haptic="light">Новая договорённость</a>
   {% else %}
-  <a class="btn primary block" href="/gate" data-haptic="light">🔑 Войти и создать пакт</a>
+  <a class="btn primary block" href="/gate" data-haptic="light">Войти и создать договорённость</a>
   {% endif %}
 </div>
 {% endblock %}

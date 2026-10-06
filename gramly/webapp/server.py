@@ -8,6 +8,7 @@ site works behind several workers without sticky sessions.
 from __future__ import annotations
 
 import hmac
+import math
 import secrets
 from urllib.parse import urlencode
 
@@ -27,7 +28,7 @@ GATE = "gramly_gate"
 
 NAV = [
     {"key": "home", "label": "Главная", "href": "/"},
-    {"key": "board", "label": "Пакты", "href": "/pacts"},
+    {"key": "board", "label": "Договорённости", "href": "/pacts"},
     {"key": "rating", "label": "Порядочность", "href": "/rating"},
     {"key": "guarantors", "label": "Гаранты", "href": "/guarantors"},
 ]
@@ -39,6 +40,7 @@ AVATAR_COLORS = [
 
 
 # --------------------------------------------------------------------- helpers
+
 
 def avatar_color(rec: dict) -> str:
     if rec.get("avatar_color"):
@@ -59,6 +61,33 @@ def initials(rec: dict) -> str:
         return name[:2].upper()
     return "?"
 
+
+
+
+def score_text(value: float) -> str:
+    value = float(value or 0)
+    if abs(value - round(value)) < 0.05:
+        raw = f"{int(round(value)):,}"
+    else:
+        raw = f"{value:,.1f}"
+    return raw.replace(",", "\u202f").replace(".", ",")
+
+
+def profile_role(rec: dict) -> tuple[str, str]:
+    uid = int(rec.get("id") or 0)
+    tier = int(rec.get("guarantor_tier") or 0)
+    if uid in config.admin_ids:
+        return "admin", "Администратор"
+    if tier >= 1:
+        return "guarantor", guarantors.TIER_NAMES.get(tier, "Гарант")
+    if int(rec.get("pacts_closed") or 0) <= 0:
+        return "new", ""
+    return "member", ""
+
+
+def profile_glow(score: float) -> float:
+    # Unbounded reputation: use log scale only for visual intensity.
+    return round(max(0.35, min(1.0, 0.35 + math.log10(max(1.0, float(score)) + 1.0) / 6.0)), 2)
 
 def status_label(status: str) -> str:
     return terms.STATUSES.get(status, status or "")
@@ -124,6 +153,7 @@ def view_profile(rec: dict) -> dict:
     st = store()
     snap = rating.snapshot(st, uid)
     tier = int(rec.get("guarantor_tier") or 0)
+    role, role_label = profile_role(rec)
     return {
         "id": uid,
         "uid": uid,
@@ -131,9 +161,11 @@ def view_profile(rec: dict) -> dict:
         "last_name": rec.get("last_name", ""),
         "name": users.display(rec),
         "username": rec.get("username", ""),
+        "photo_url": rec.get("photo_url", ""),
         "bio": rec.get("bio", ""),
         "premium": bool(rec.get("premium")),
         "score": snap["score"],
+        "score_text": score_text(snap["score"]),
         "tier": snap["tier"],
         "pact_count": len(users.pact_ids(st, uid, 500)),
         "opened": int(rec.get("pacts_opened") or 0),
@@ -144,7 +176,9 @@ def view_profile(rec: dict) -> dict:
         "reports_upheld": int(rec.get("reports_upheld") or 0),
         "guarantor_tier": tier,
         "guarantor_name": guarantors.TIER_NAMES.get(tier, ""),
-        "stars": int(rec.get("star_balance") or 0),
+        "role": role,
+        "role_label": role_label,
+        "glow_strength": profile_glow(snap["score"]),
         "last_seen": rec.get("last_seen", 0),
     }
 
@@ -205,6 +239,7 @@ def create_app() -> Flask:
     app.config["JSON_AS_ASCII"] = False
     app.jinja_env.globals.update(
         terms=terms,
+        score_text=score_text,
         avatar_color=avatar_color,
         initials=initials,
         status_label=status_label,
@@ -214,8 +249,6 @@ def create_app() -> Flask:
         ts_date=ts_date,
         fmt=fmt,
     )
-    app.jinja_env.filters["pct"] = lambda v: max(0, min(100, int(round(float(v or 0)))))
-    app.jinja_env.filters["num"] = lambda v: f"{float(v or 0):.1f}"
 
     s = store()
     # Behind Vercel/nginx the client talks TLS to the proxy, not to Flask:
@@ -278,24 +311,17 @@ def create_app() -> Flask:
 
     @app.get("/")
     def index():
-        st = discovery.counters(s)
         me = g.me
-        my_list = []
-        if me:
-            my_list = [view_pact(p) for p in pacts.list_for(s, g.uid, 12)]
-        chain_ok, chain_note = rating.verify_chain(s, 200)
+        active_count = 0
+        for pid in s.lrange(s.k("pact", "all"), -200, -1):
+            if s.hget(pacts.key(s, pid), "status", "") == "active":
+                active_count += 1
         return render_template(
             "index.html",
             brand=terms.APP_NAME,
             active="home",
             me=me,
-            stats=st,
-            my_list=my_list,
-            ledger=ledger_rows(14),
-            chain_note=("🔐 " + chain_note) if chain_ok else ("⚠️ " + chain_note),
-            people=[dict(r, id=r["uid"]) for r in users.rank(s, 8)],
-            guarantors=[dict(r, id=r["uid"], name=r["name"])
-                        for r in guarantors.leaderboard(s, 6)],
+            stats={"active": active_count},
         )
 
     @app.get("/gate")
@@ -383,20 +409,16 @@ def create_app() -> Flask:
                 "hash": pub.get("hash", ""),
             })
         rows.sort(key=lambda r: r.get("num") or 0, reverse=True)
-        return render_template("board.html", brand="Пакты", active="board",
+        return render_template("board.html", brand="Договорённости", active="board",
                                rows=rows[:60], kind=kind, status=status, q=q,
                                kinds=terms.PACT_KINDS, order=terms.KIND_ORDER,
                                statuses=terms.STATUSES, total=len(rows))
 
     @app.get("/rating")
     def rating_page():
-        chain_ok, chain_note = rating.verify_chain(s, 300)
         return render_template(
             "rating.html", brand="Порядочность", active="rating",
-            rows=ledger_rows(60),
             top=[dict(r, id=r["uid"]) for r in users.rank(s, 20)],
-            chain_ok=chain_ok, chain_note=chain_note,
-            st=discovery.counters(s),
         )
 
     @app.get("/guarantors")
@@ -421,7 +443,7 @@ def create_app() -> Flask:
         integrity_ok, integrity_note = pacts.verify(s, pid)
         return render_template(
             "pact.html",
-            brand=f"Пакт №{pact.get('num')}",
+            brand=f"Договорённость №{pact.get('num')}",
             p=view_pact(pact),
             sides=sides,
             signatures=pacts.signatures(pact),
@@ -445,10 +467,6 @@ def create_app() -> Flask:
         return render_template(
             "profile.html", brand=users.display(rec), active="",
             p=view_profile(rec),
-            pacts_list=[view_pact(x) for x in pacts.list_for(s, uid, 20)],
-            events=[dict(e, delta=float(e.get("delta") or 0), when=ts_short(e.get("ts")))
-                    for e in rating.events(s, uid, 25)],
-            ginfo=guarantors.tier_info(s, uid),
             is_me=uid == g.uid,
         )
 
@@ -458,7 +476,7 @@ def create_app() -> Flask:
         if guard:
             return guard
         rows = [view_pact(p) for p in pacts.list_for(s, g.uid, 60)]
-        return render_template("board.html", brand="Мои пакты", active="my",
+        return render_template("board.html", brand="Мои договорённости", active="my",
                                rows=rows, kind="", status="", q="", mine=True,
                                kinds=terms.PACT_KINDS, order=terms.KIND_ORDER,
                                statuses=terms.STATUSES, total=len(rows))
@@ -468,7 +486,7 @@ def create_app() -> Flask:
         guard = require_login()
         if guard:
             return guard
-        return render_template("new.html", brand="Новый пакт", active="new",
+        return render_template("new.html", brand="Новая договорённость", active="new",
                                kinds=terms.PACT_KINDS, order=terms.KIND_ORDER,
                                default_kind=terms.DEFAULT_KIND,
                                guarantors=[dict(r, id=r["uid"], name=r["name"])
@@ -486,7 +504,7 @@ def create_app() -> Flask:
             pact = pacts.activate(s, pid, g.uid)
             if pact.get("guarantor"):
                 guarantors.add_case(s, int(pact["guarantor"]), pid)
-            message = "Обе стороны подписали — пакт в силе"
+            message = "Обе стороны подписали — договорённость действует"
         return redirect(_back(f"/p/{pid}", ok=message, err="" if changed else message))
 
     @app.post("/p/<pid>/close")
@@ -501,7 +519,7 @@ def create_app() -> Flask:
             abort(404)
         if verdict == "cancelled":
             _, applied = pacts.cancel(s, pid, g.uid, data.get("note", ""))
-            return redirect(_back(f"/p/{pid}", ok="Пакт расторгнут"))
+            return redirect(_back(f"/p/{pid}", ok="Договорённость расторгнута"))
         if verdict == "broken":
             guilty = g.uid
             if data.get("guilty") == "other":
@@ -509,7 +527,7 @@ def create_app() -> Flask:
             pacts.close(s, pid, guilty, "broken", data.get("note", ""))
             return redirect(_back(f"/p/{pid}", ok="Нарушение зафиксировано"))
         pacts.close(s, pid, g.uid, "completed", data.get("note", ""))
-        return redirect(_back(f"/p/{pid}", ok="Пакт отмечен как исполненный"))
+        return redirect(_back(f"/p/{pid}", ok="Договорённость отмечена как исполненная"))
 
     @app.post("/new")
     def create_pact():

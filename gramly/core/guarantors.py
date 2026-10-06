@@ -14,10 +14,10 @@ from .store import Store, now
 TIER_NAMES = {
     0: "Не гарант",
     1: "Гарант",
-    2: "Проверенный гарант",
-    3: "Мастер гарантии",
-    4: "Страж",
-    5: "Верховный страж",
+    2: "Опытный гарант",
+    3: "Старший гарант",
+    4: "Главный гарант",
+    5: "Страж",
 }
 
 TIER_EMOJI = {
@@ -125,9 +125,9 @@ def apply_application(s: Store, uid: int) -> tuple[bool, str]:
     rec = users.get(s, uid)
     score = rating.current(s, uid)
     if int(rec.get("pacts_closed", 0) or 0) < 1:
-        return False, "нужен хотя бы один исполненный пакт"
+        return False, "нужна хотя бы одна исполненная договорённость"
     if int(rec.get("pacts_broken", 0) or 0) > 0:
-        return False, "нарушенные пакты закрывают дорогу к гаранту"
+        return False, "нарушенные договорённости закрывают дорогу к гаранту"
     if score < 65:
         return False, f"нужен балл порядочности от 65 (сейчас {score:.0f})"
     users.update(s, uid, guarantor_tier=1)
@@ -169,7 +169,11 @@ def add_case(s: Store, uid: int, pid: str) -> None:
 
 def leaderboard(s: Store, limit: int = 20) -> list:
     rows = []
+    prefix = s.k("u", "")
     for k in s.scan_keys(s.k("u", "*")):
+        suffix = k[len(prefix):] if k.startswith(prefix) else ""
+        if not suffix.isdigit():
+            continue
         rec = s.hgetall(k) or {}
         t = int(rec.get("guarantor_tier", 0) or 0)
         if t < 1:
@@ -178,13 +182,13 @@ def leaderboard(s: Store, limit: int = 20) -> list:
             "uid": int(rec.get("id", 0) or 0),
             "name": users.display(rec),
             "username": rec.get("username", ""),
+            "photo_url": rec.get("photo_url", ""),
             "tier": t,
             "emoji": TIER_EMOJI.get(t, "?"),
             "tier_name": TIER_NAMES.get(t, TIER_NAMES[1]),
             "cases": int(rec.get("guarantor_cases", 0) or 0),
             "settled": int(rec.get("guarantor_settled", 0) or 0),
             "disputes": int(rec.get("guarantor_disputes", 0) or 0),
-            "stars": int(rec.get("star_balance", 0) or 0),
             "score": rating.current(s, int(rec.get("id", 0) or 0)),
         })
     rows.sort(key=lambda r: (r["tier"], r["settled"], r["score"]), reverse=True)
@@ -200,6 +204,5 @@ def summary_line(s: Store, uid: int) -> str:
     return (
         f"{info['emoji']} {info['name']}\n"
         f"Кейсов: {info['cases']} · Исполнено: {info['settled']} · Споров: {info['disputes']}\n"
-        f"{free_part}\n"
-        f"Баланс: ⭐ {info['stars']}"
+        f"{free_part}"
     )

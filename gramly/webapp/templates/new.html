@@ -8,7 +8,7 @@
 <input type="hidden" name="_csrf" value="{{ csrf }}">
 <div class="card">
   <div class="field">
-    <label>Тип соглашения</label>
+    <label>Тип договорённости</label>
     <select name="kind">
       {% for k in order %}
         <option value="{{ k }}" {{ 'selected' if k == default_kind else '' }}>{{ kinds[k].emoji }} {{ kinds[k].label }} — {{ kinds[k].hint }}</option>
@@ -57,12 +57,12 @@
 </div>
 
 <div class="btn-row" style="padding:4px 12px 24px">
-  <button class="btn primary block" data-haptic="heavy">🚀 Создать пакт</button>
+  <button class="btn primary block" data-haptic="heavy">Создать договорённость</button>
 </div>
 </form>
 
 <div class="notice" style="color:var(--g-hint)">
-  Пакт создаётся в статусе «{{ terms.STATUSES['half'] }}»: ваша подпись ставится сразу,
+  Договорённость создаётся в статусе «{{ terms.STATUSES['half'] }}»: ваша подпись ставится сразу,
   вторая сторона подпишет по ссылке. Рейтинг двигается только после отметки «Исполнено».
 </div>
 

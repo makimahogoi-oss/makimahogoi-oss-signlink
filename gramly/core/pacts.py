@@ -157,7 +157,7 @@ def seal(pact: dict) -> str:
 def verify(s: Store, pid: str) -> tuple[bool, str]:
     pact = get(s, pid)
     if not pact:
-        return False, "пакт не найден"
+        return False, "договорённость не найдена"
     if seal(pact) == pact.get("hash"):
         return True, "целостность подтверждена"
     return False, "целостность нарушена: содержимое менялось после подписания"
@@ -388,9 +388,9 @@ def sign(s: Store, pid: str, uid: int, text: str = "") -> tuple[dict, bool, str]
     """Add a signature. Returns (pact, changed, message)."""
     pact = get(s, pid)
     if not pact:
-        return {}, False, "пакт не найден"
+        return {}, False, "договорённость не найдена"
     if not is_party(pact, uid):
-        return pact, False, "вы не сторона этого пакта"
+        return pact, False, "вы не сторона этой договорённости"
     if pact.get("status") in ("done", "broken", "cancelled"):
         return pact, False, f"{terms.ENTITY} уже {terms.STATUSES.get(pact['status'], 'закрыт')}"
     if has_signed(pact, uid):
@@ -451,7 +451,7 @@ def close(s: Store, pid: str, uid: int, verdict: str, note: str = "") -> tuple[d
     else:
         pact = set_status(s, pid, "broken", note or "нарушены условия", uid)
         if guilty:
-            rating.penalise(s, guilty, "broken", rating.GAIN_BROKEN, note or "нарушил условия пакта", pid)
+            rating.penalise(s, guilty, "broken", rating.GAIN_BROKEN, note or "нарушил условия договорённости", pid)
             users.update(s, guilty, pacts_broken=int(users.get(s, guilty).get("pacts_broken", 0) or 0) + 1)
             applied.append((guilty, rating.GAIN_BROKEN, "нарушение условий"))
         if innocent:
@@ -466,7 +466,7 @@ def cancel(s: Store, pid: str, uid: int, note: str = "") -> tuple[dict, list]:
     pact = set_status(s, pid, "cancelled", note or "расторгнут по инициативе стороны", uid)
     applied = []
     if both_signed(pact) and other:
-        rating.penalise(s, uid, "cancel", rating.GAIN_CANCELLED_BY_YOU, note or "расторг подписанного пакта", pid)
+        rating.penalise(s, uid, "cancel", rating.GAIN_CANCELLED_BY_YOU, note or "расторг подписанную договорённость", pid)
         rating.penalise(s, other, "cancel", rating.GAIN_CANCELLED_BY_OTHER, note or "контрагент расторг", pid)
         applied = [(uid, rating.GAIN_CANCELLED_BY_YOU, ""), (other, rating.GAIN_CANCELLED_BY_OTHER, "")]
     return pact, applied
@@ -617,7 +617,7 @@ def stats(s: Store) -> dict:
         "total": total,
         "active": active,
         "awaiting": signed,
-        "users": len(list(s.scan_keys(s.k("u", "*")))),
+        "users": sum(1 for k in s.scan_keys(s.k("u", "*")) if (k.rsplit(":", 1)[-1]).isdigit()),
         "channels": len(list(s.scan_keys(s.k("ch", "*")))),
         "reports_open": s.llen(s.k("reports", "open")),
         "ledger": s.llen(s.k("ledger", "chain")),

@@ -132,10 +132,10 @@ def _raw_score(s: Store, uid: int) -> float:
 
 
 def _write(s: Store, uid: int, value: float, mode: str = "set") -> float:
-    value = max(terms.RATING_MIN, min(terms.RATING_MAX, round(float(value), 3)))
+    value = max(terms.RATING_MIN, round(float(value), 3))
     key = _score_key(s, uid)
     if mode == "delta":
-        value = max(terms.RATING_MIN, min(terms.RATING_MAX, round(_raw_score(s, uid) + value, 3)))
+        value = max(terms.RATING_MIN, round(_raw_score(s, uid) + value, 3))
     s.hset(key, {"v": value, "ts": now()})
     return value
 
@@ -207,7 +207,8 @@ def positive_weight(s: Store, actor: int, counterparty: int, *, pact: str = "", 
         return 0.0, "замкнутый круг: нет сделок с третьими лицами"
 
     partner = current(s, counterparty)
-    factor = (max(0.0, partner) / 100.0) ** PARTNER_EXPONENT
+    partner_for_weight = min(max(0.0, partner), 1000.0)
+    factor = ((partner_for_weight + 1.0) / 101.0) ** PARTNER_EXPONENT
     seen = pair_history(s, actor, counterparty)
     dim = DIMINISHING[min(seen, len(DIMINISHING) - 1)]
 
@@ -223,7 +224,7 @@ def positive_weight(s: Store, actor: int, counterparty: int, *, pact: str = "", 
     if seen:
         note.append(f"повторная сделка ({seen}) — вес ×{dim:g}")
     if partner < 60:
-        note.append(f"контрагент {partner:.0f}/100")
+        note.append(f"контрагент {partner:.0f}")
     return round(value, 3), "; ".join(note) or "полный вес"
 
 

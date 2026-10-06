@@ -78,7 +78,7 @@
   <div class="card">
     <div class="field"><label>Заметка к подписи</label>
       <input type="text" name="text" maxlength="160" placeholder="Подтверждаю условия" value="Подтверждаю условия"></div>
-    <div class="btn-row"><button class="btn primary block" data-haptic="light">✍️ Подписать пакт</button></div>
+    <div class="btn-row"><button class="btn primary block" data-haptic="light">Подписать договорённость</button></div>
   </div>
 </form>
 {% endif %}
@@ -90,25 +90,25 @@
     <form method="post" action="/p/{{ p.id }}/close">
       <input type="hidden" name="_csrf" value="{{ csrf }}">
       <input type="hidden" name="verdict" value="completed">
-      <button class="btn ghost block" style="border:0;border-right:1px solid var(--g-separator);border-radius:0" data-haptic="light">🏁 Исполнено</button>
+      <button class="btn ghost block" style="border:0;border-right:1px solid var(--g-separator);border-radius:0" data-haptic="light">Исполнено</button>
     </form>
     <form method="post" action="/p/{{ p.id }}/close">
       <input type="hidden" name="_csrf" value="{{ csrf }}">
       <input type="hidden" name="verdict" value="broken">
       <input type="hidden" name="guilty" value="me">
-      <button class="btn ghost block" style="border-radius:0;color:var(--g-destructive)" data-haptic="light">⛔ Нарушено мной</button>
+      <button class="btn ghost block" style="border-radius:0;color:var(--g-destructive)" data-haptic="light">Нарушено мной</button>
     </form>
   </div>
   <form method="post" action="/p/{{ p.id }}/close">
     <input type="hidden" name="_csrf" value="{{ csrf }}">
     <input type="hidden" name="verdict" value="broken">
     <input type="hidden" name="guilty" value="other">
-    <div class="btn-row"><button class="btn ghost block" data-haptic="light">⛔ Нарушено второй стороной</button></div>
+    <div class="btn-row"><button class="btn ghost block" data-haptic="light">Нарушено второй стороной</button></div>
   </form>
   <form method="post" action="/p/{{ p.id }}/close">
     <input type="hidden" name="_csrf" value="{{ csrf }}">
     <input type="hidden" name="verdict" value="cancelled">
-    <div class="btn-row"><button class="btn ghost block" data-haptic="light">🚫 Расторгнуть</button></div>
+    <div class="btn-row"><button class="btn ghost block" data-haptic="light">Расторгнуть</button></div>
   </form>
 </div>
 {% endif %}
@@ -130,7 +130,7 @@
       </select></div>
     <div class="field"><label>Что произошло</label>
       <textarea name="text" rows="3" maxlength="1200" placeholder="Конкретные факты, даты, ссылки"></textarea></div>
-    <div class="btn-row"><button class="btn danger block" data-haptic="heavy">⚠️ Пожаловаться на вторую сторону</button></div>
+    <div class="btn-row"><button class="btn danger block" data-haptic="heavy">Пожаловаться на вторую сторону</button></div>
   </div>
 </form>
 {% endif %}
@@ -179,6 +179,6 @@
 {% block bottom %}
 <div class="bottom-bar">
   <a class="btn ghost block" href="{{ '/my' if uid else '/gate' }}" data-haptic="light">
-    {{ '📄 Мои пакты' if uid else '🔑 Войти через Telegram' }}</a>
+    {{ '📄 Мои договорённости' if uid else 'Войти через Telegram' }}</a>
 </div>
 {% endblock %}
